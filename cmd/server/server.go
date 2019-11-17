@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"html"
 	"log"
@@ -13,7 +12,8 @@ import (
 
 func main() {
 
-	health.RegisterPeriodicFunc("minute_even", time.Second*15, currentMinuteEvenCheck)
+	health.RegisterPeriodicFunc("minute_even", time.Second*15, func() error { return currentMinuteDivisible(2) })
+	health.RegisterPeriodicFunc("minute_four", time.Second*15, func() error { return currentMinuteDivisible(4) })
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
 	})
@@ -21,10 +21,10 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8081", nil))
 }
 
-func currentMinuteEvenCheck() error {
+func currentMinuteDivisible(n int) error {
 	m := time.Now().Minute()
-	if m%2 == 0 {
-		return errors.New("current minute is even")
+	if m%n == 0 {
+		return fmt.Errorf("current minute is divisible by %d", n)
 	}
 	return nil
 }
